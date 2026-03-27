@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phonics Battle Lessons</title>
+<style>
+body {
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: linear-gradient(135deg,#c7d2fe,#e0e7ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  margin: 0;
+}
+.card {
+  background:white;
+  padding:30px 40px;
+  border-radius:24px;
+  box-shadow:0 20px 40px rgba(0,0,0,0.15);
+  text-align:center;
+  max-width:550px;
+  width:90%;
+}
+h1 {
+  margin-top:0;
+  font-size:32px;
+  color:#4f46e5;
+}
+.hp {
+  font-size:18px;
+  margin:5px;
+}
+#progressBarContainer {
+  width: 100%;
+  background: #e0e0e0;
+  height: 18px;
+  border-radius: 12px;
+  margin-bottom: 10px;
+  position: relative;
+}
+#progressBar {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg,#6366f1,#a78bfa);
+  border-radius:12px;
+}
+#progressText {
+  position: absolute;
+  width:100%;
+  top:0;
+  left:0;
+  text-align:center;
+  font-size:14px;
+  font-weight:600;
+  color:#fff;
+  line-height:18px;
+}
+.wordImage {
+  width:250px;
+  height:250px;
+  object-fit:cover;
+  border-radius:12px;
+  margin:10px 0;
+}
+.word {
+  font-size:40px;
+  font-weight:700;
+}
+button {
+  font-size:16px;
+  padding:10px 18px;
+  margin:5px;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+  color:white;
+  background:#6366f1;
+}
+button:hover {
+  background:#4f46e5;
+}
+#choices button {
+  background:#10b981;
+}
+#result {
+  font-size:20px;
+  margin-top:10px;
+  font-weight:bold;
+}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>⚔️ Phonics Battle Lessons ⚔️</h1>
+ <div class="hp">Player HP: <span id="playerHP">30</span></div>
+  <div class="hp">Enemy HP: <span id="enemyHP">30</span></div>
+ <div id="progressBarContainer">
+    <div id="progressBar"></div>
+    <div id="progressText"></div>
+  </div>
+ <img class="wordImage" id="wordImage">
+  <div class="word" id="word"></div>
+ <div id="choices"></div>
+ <p id="result"></p>
+ <div>
+    <button onclick="prevWord()">Prev</button>
+    <button onclick="nextWord()">Next</button>
+    <button onclick="resetBattle()">Reset Battle</button>
+  </div>
+</div>
+<script>
+// 🧩 Word bank
+const wordBank = ["cat","dog","sun","hat","pig","cup","fox","bee","ant","bed"];
+
+// 🖼️ Fixed images for each word
+const wordImages = {
+  cat: "https://media.istockphoto.com/id/2149151312/photo/standing-cats-png-isolated-alert-felines.jpg?s=1024x1024&w=is&k=20&c=VF4AatteIfLABk2OoXZfRjJ28Ki51Gnm1SuEybjGvWU=",
+  dog: "https://media.istockphoto.com/id/2207948804/photo/isolated-black-and-white-border-collie-on-a-white-background-lies-and-shows-his-tongue-on-a.jpg?s=1024x1024&w=is&k=20&c=wHcaoKtd6gf2uXqvVGVp3qWitIHVDW0zaJjVsv1Rf8M=",
+  sun: "https://media.istockphoto.com/id/1471184975/photo/sydney-sunrise.webp?b=1&s=612x612&w=0&k=20&c=9gMH0RY8xbJmcDoURh1N-Cfl5sYj7nRsPro7dzb2QbE=",
+  hat: "https://cdn.pixabay.com/photo/2022/06/22/16/00/cap-7278216_1280.jpg",
+  pig: "https://media.istockphoto.com/id/153560796/photo/small-pig.jpg?s=1024x1024&w=is&k=20&c=xcUhUDVtqQzuB3VOT38JI3TxRJkAW-4IXTPHyCKRYZA=",
+  cup: "https://media.istockphoto.com/id/1358132613/photo/refreshing-hot-cup-of-coffee-at-a-cafe.jpg?s=1024x1024&w=is&k=20&c=ztV8EC2EpjBtMnLw-Uz6lJJKv7LELhOBr2w-IQRkZNo=",
+  fox: "https://media.istockphoto.com/id/1414182722/photo/side-view-of-a-red-fox-looking-up-two-years-old-isolated-on-white.jpg?s=1024x1024&w=is&k=20&c=z62HnSGVI72vJgUEAFEh4F0R_4w0lfwhx5wBTJvv4HU=",
+  bee: "https://media.istockphoto.com/id/1396407304/photo/insects-of-europe-bees-side-view-macro-of-western-honey-bee-isolated-on-white-background-with.webp?b=1&s=612x612&w=0&k=20&c=Q96gMdc2XqQoaAl1hrc5QJTv3Pu100HZwrg25wRpvUY=",
+  ant: "https://cdn.pixabay.com/photo/2020/04/19/05/33/ants-5061910_1280.jpg",
+  bed: "https://cdn.pixabay.com/photo/2016/11/21/16/21/bed-1846251_1280.jpg"
+};
+
+// 🔊 Get first letter as answer
+function generateChoices(word){
+  const letters = "abcdefghijklmnopqrstuvwxyz".split("");
+  let correct = word[0];
+  let choices = [correct];
+
+  while(choices.length < 3){
+    let rand = letters[Math.floor(Math.random()*letters.length)];
+    if(!choices.includes(rand)) choices.push(rand);
+  }
+
+  return choices.sort(()=>Math.random()-0.5);
+}
+
+// 🎲 Generate lesson
+function generateLesson(size = 5){
+  const lesson = [];
+  for(let i=0;i<size;i++){
+    const word = wordBank[Math.floor(Math.random()*wordBank.length)];
+    lesson.push(word);
+  }
+  return lesson;
+}
+
+// 💪 Player/Enemy HP
+let playerHP = 30;
+let enemyHP = 30;
+
+// 📝 Lesson data
+let lesson = generateLesson();
+let currentWord = 0;
+
+// 🔥 UI elements
+const wordEl = document.getElementById("word");
+const imageEl = document.getElementById("wordImage");
+const choicesDiv = document.getElementById("choices");
+const progressBar = document.getElementById("progressBar");
+const progressText = document.getElementById("progressText");
+const playerHPEl = document.getElementById("playerHP");
+const enemyHPEl = document.getElementById("enemyHP");
+const resultEl = document.getElementById("result");
+
+// Update UI
+function updateUI(){
+  const word = lesson[currentWord];
+  wordEl.textContent = "_" + word.slice(1);
+
+  // fixed image
+  imageEl.src = wordImages[word] || "https://loremflickr.com/300/300/animal?lock=0";
+
+  const choices = generateChoices(word);
+  choicesDiv.innerHTML = "";
+  choices.forEach(c=>{
+    const btn = document.createElement("button");
+    btn.innerText = c;
+    btn.onclick = ()=>checkAnswer(c, word[0]);
+    choicesDiv.appendChild(btn);
+  });
+
+  progressBar.style.width = ((currentWord+1)/lesson.length)*100 + "%";
+  progressText.textContent = `Word ${currentWord+1} / ${lesson.length}`;
+}
+
+// Check answer
+function checkAnswer(choice, answer){
+  if(choice === answer){
+    enemyHP -= 10;
+    resultEl.innerText = "✅ Correct! Attack!";
+  } else {
+    playerHP -= 5;
+    resultEl.innerText = "❌ Wrong! You got hit!";
+  }
+
+  playerHPEl.innerText = playerHP;
+  enemyHPEl.innerText = enemyHP;
+
+  if(playerHP <= 0){
+    resultEl.innerText = "💀 Game Over";
+    return;
+  }
+  if(enemyHP <= 0){
+    resultEl.innerText = "🏆 You Win!";
+    return;
+  }
+}
+
+// Navigation
+function nextWord(){
+  if(currentWord < lesson.length-1){
+    currentWord++;
+    updateUI();
+  }
+}
+
+function prevWord(){
+  if(currentWord > 0){
+    currentWord--;
+    updateUI();
+  }
+}
+
+// Reset battle
+function resetBattle(){
+  playerHP = 30;
+  enemyHP = 30;
+  playerHPEl.innerText = playerHP;
+  enemyHPEl.innerText = enemyHP;
+  resultEl.innerText = "";
+}
+
+updateUI();
+</script>
+</body>
+</html>
+:::
+
